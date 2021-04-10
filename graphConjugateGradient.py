@@ -1,6 +1,14 @@
 import numpy
 import math
+import pylab
+import time
+from sympy import *
+import keyboard
 import numpy.ma as ma
+from scipy.optimize import minimize_scalar
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 def PDX(func, x, y):
     d = 0.000000001
@@ -33,7 +41,18 @@ def goldenSlice(func, a1, b1, eps):
         x0 = b + a - x1
     return (a + b)/2
 
+def makeData(z):
+    x = numpy.arange(-40, 40, 0.5)
+    y = numpy.arange(-40, 40, 0.5)
+    xgrid, ygrid = numpy.meshgrid(x, y)
+
+    zgrid = z([xgrid, ygrid])
+    return xgrid, ygrid, zgrid
+
+
 def conjugateGradient(z, x, y, e, ax, fig):
+    xOld = x
+    yOld = y
     stop = False
     iter = 0
     p = []
@@ -42,13 +61,24 @@ def conjugateGradient(z, x, y, e, ax, fig):
 
     grad = p
 
+    vertex = [[]]
+    vertex.append([])
+
     while stop == False:
         iter += 1
 
         alpha = goldenSlice(z, (x, y), p, e)
-
         x = x + alpha * p[0]
         y = y + alpha * p[1]
+
+        vertex[0].append(xOld)
+        vertex[0].append(x)
+
+        vertex[1].append(yOld)
+        vertex[1].append(y)
+
+        xOld = x
+        yOld = y
 
         grad1 = []
         grad1.append(-myGradient(z, x, y)[0])
@@ -66,12 +96,23 @@ def conjugateGradient(z, x, y, e, ax, fig):
 
         if ma.innerproduct(grad, grad) <= e:
             stop = True
-    return (x, y, iter)
+    return vertex
 
 if __name__ == '__main__':
     z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
     f = lambda x, y: (x**2)/15 + (y**2)/2
+    x, y, z = makeData(z)
+
+    pylab.ion()
+
+    fig, ax = pylab.subplots()
+
+    ax.contourf(x, y, z, levels=20)
+    ax.axis([-40, 40, -40, 40])
 
     arr = conjugateGradient(f, -38, 20, 0.0001, ax, fig)
 
-    print(arr, f(arr[0], arr[1]))
+    ax.plot(arr[0], arr[1], c='red')
+
+    pylab.ioff()
+    pylab.show()

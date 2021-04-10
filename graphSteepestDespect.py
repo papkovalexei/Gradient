@@ -102,34 +102,26 @@ def fibonacci(func, a, b, eps):
 
 def steepestDespect(z, x, y, e, ax, fig):
     stop = False
-    lbm = 0.3
     x0 = x
     y0 = y
 
     x1 = 0
     y1 = 0
 
-    arr = [[]]
-    arr.append([])
-    arr.append([])
+    vertex = [[]]
+    vertex.append([])
+    
     while stop == False:
-
-        #ax.plot((x1, y1), (x0, y0), c='orange')
-        #print(x1, y1, "to ", x0, y0)
-        ax.scatter(x0, y0, c='red')
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-     
-
-        #x1 = x0 - lbm * myGradient(z, x0, y0)[0]
-        #y1 = y0 - lbm * myGradient(z, x0, y0)[1]
-        print(x1, y1)
         point = fibonacci(z, [x0, y0], [-myGradient(z, x0, y0)[0], -myGradient(z, x0, y0)[1]], e)
-        ax.axline((x0, y0), (-myGradient(z, x0, y0)[0], -myGradient(z, x0, y0)[1]), c='yellow')
-        #keyboard.read_key()
-        time.sleep(0.1)
+
         x1 = point[0]
         y1 = point[1]
+
+        vertex[0].append(x0)
+        vertex[0].append(x1)
+
+        vertex[1].append(y0)
+        vertex[1].append(y1)
 
         if (x1 - x0)**2 + (y1 - y0)**2 < e**2 and math.fabs(z(x0, y0) - z(x1, y1)) < e:
             stop = True
@@ -137,10 +129,7 @@ def steepestDespect(z, x, y, e, ax, fig):
         x0 = x1
         y0 = y1
 
-        arr[0].append(x1)
-        arr[1].append(y1)
-
-    return arr
+    return vertex
     
 
 def makeData(z):
@@ -165,6 +154,8 @@ if __name__ == '__main__':
     ax.axis([-40, 40, -40, 40])
 
     arr = steepestDespect(f, -38, 20, 0.01, ax, fig)
+
+    ax.plot(arr[0], arr[1], c='red')
 
     pylab.ioff()
     pylab.show()
