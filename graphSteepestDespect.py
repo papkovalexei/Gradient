@@ -1,5 +1,13 @@
 import numpy
 import math
+import pylab
+import time
+from sympy import *
+import keyboard
+from scipy.optimize import minimize_scalar
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 def PDX(func, x, y):
     d = 0.000000001
@@ -92,31 +100,71 @@ def fibonacci(func, a, b, eps):
             fb = func(z[0], z[1])
     return [(a[0] + b[0])/2, (a[1] + b[1])/2]
 
-def steepestDespect(z, x, y, e):
-    iter = 0
+def steepestDespect(z, x, y, e, ax, fig):
     stop = False
-
+    lbm = 0.3
     x0 = x
     y0 = y
 
     x1 = 0
     y1 = 0
 
+    arr = [[]]
+    arr.append([])
+    arr.append([])
     while stop == False:
+
+        #ax.plot((x1, y1), (x0, y0), c='orange')
+        #print(x1, y1, "to ", x0, y0)
+        ax.scatter(x0, y0, c='red')
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+     
+
+        #x1 = x0 - lbm * myGradient(z, x0, y0)[0]
+        #y1 = y0 - lbm * myGradient(z, x0, y0)[1]
+        print(x1, y1)
         point = fibonacci(z, [x0, y0], [-myGradient(z, x0, y0)[0], -myGradient(z, x0, y0)[1]], e)
-        iter += 1
+        ax.axline((x0, y0), (-myGradient(z, x0, y0)[0], -myGradient(z, x0, y0)[1]), c='yellow')
+        #keyboard.read_key()
+        time.sleep(0.1)
         x1 = point[0]
         y1 = point[1]
 
         if (x1 - x0)**2 + (y1 - y0)**2 < e**2 and math.fabs(z(x0, y0) - z(x1, y1)) < e:
             stop = True
+
         x0 = x1
         y0 = y1
 
-    return (x1, y1, iter)
+        arr[0].append(x1)
+        arr[1].append(y1)
 
-z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
-f = lambda x, y: (x**2)/15 + (y**2)/2
+    return arr
+    
 
-answer = steepestDespect(f, -38, 20, 0.01)
-print("(",answer[0],",",answer[1],") f(x, y) =",f(answer[0], answer[1]),"Iterations =",answer[2])
+def makeData(z):
+    x = numpy.arange(-40, 40, 0.5)
+    y = numpy.arange(-40, 40, 0.5)
+    xgrid, ygrid = numpy.meshgrid(x, y)
+
+    zgrid = z([xgrid, ygrid])
+    return xgrid, ygrid, zgrid
+
+
+if __name__ == '__main__':
+    z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
+    f = lambda x, y: (x**2)/15 + (y**2)/2
+    x, y, z = makeData(z)
+
+    pylab.ion()
+
+    fig, ax = pylab.subplots()
+
+    ax.contourf(x, y, z)
+    ax.axis([-40, 40, -40, 40])
+
+    arr = steepestDespect(f, -38, 20, 0.01, ax, fig)
+
+    pylab.ioff()
+    pylab.show()
