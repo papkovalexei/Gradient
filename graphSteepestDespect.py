@@ -122,7 +122,10 @@ def steepestDespect(z, x, y, e, ax, fig):
 
         vertex[1].append(y0)
         vertex[1].append(y1)
-
+        ax.axline((x1, y1), (-myGradient(z, x0, y0)[0], -myGradient(z, x0, y0)[1]), c='yellow')
+        ax.scatter(x0, y0, c='red')
+        fig.canvas.draw()
+        fig.canvas.flush_events()
         if (x1 - x0)**2 + (y1 - y0)**2 < e**2 and math.fabs(z(x0, y0) - z(x1, y1)) < e:
             stop = True
 
