@@ -98,7 +98,7 @@ def conjugateGradient(z, x, y, e, ax, fig):
             stop = True
     return vertex
 
-if __name__ == '__main__':
+if __name__ == '__main__':    
     z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
     f = lambda x, y: (x**2)/15 + (y**2)/2
     x, y, z = makeData(z)
@@ -107,11 +107,12 @@ if __name__ == '__main__':
 
     fig, ax = pylab.subplots()
 
-    ax.contourf(x, y, z, levels=20)
+    ax.contourf(x, y, z)
     ax.axis([-40, 40, -40, 40])
 
-    arr = conjugateGradient(f, -38, 20, 0.0001, ax, fig)
-
+    arr = conjugateGradient(f, -38, 20, 0.01, ax, fig)
+    ax.set_ylabel('y', fontsize = 15)
+    ax.set_xlabel('x', fontsize = 15)
     ax.plot(arr[0], arr[1], c='red')
 
     pylab.ioff()
