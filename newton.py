@@ -5,26 +5,28 @@ import time
 from sympy import *
 import keyboard
 from scipy.optimize import minimize_scalar
+from decimal import Decimal
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 def PDX(func, x, y):
     d = 0.000000001
-    return (func(x + d, y) - func(x, y))/d
+    return (c(func(c(x) + c(d), c(y))) - c(func(c(x), c(y))))/c(d)
 def PDY(func, x, y):
     d = 0.000000001
-    return (func(x, y + d) - func(x, y))/d
+    return (func(c(x), c(y) + c(d)) - func(c(x), c(y)))/c(d)
 
 def myGradient(func, x, y): 
     return (PDX(func, x, y), PDY(func, x, y))
-
+def c(x):
+    return Decimal(str(x)) 
 def PPDX(func, x, y):
-    d = 0.000000001
-    return (func(x + d, y) - 2*func(x, y) + func(x - d, y))/(d**2)
+    d = c(0.000000001)
+    return (c(func(x + d, y)) - 2*c(func(x, y)) + c(func(x - d, y)))/c((d**2))
 def PPDY(func, x, y):
-    d = 0.000000001
-    return (func(x, y + d) - 2*func(x, y) + func(x, y - d))/(d**2)
+    d = c(0.000000001)
+    return (func(c(x), c(y) + c(d)) - 2*func(c(x), c(y)) + func(c(x), c(y) - c(d)))/(c(d)**2)
 
 def newton(z, x, y, e, ax, fig):
     stop = False
@@ -38,8 +40,8 @@ def newton(z, x, y, e, ax, fig):
     vertex.append([])
 
     while stop == False:
-        x1 = x0 - PDX()
-        y1 = y0 - z(x0, y0)/PDY(z, x0, y0)
+        x1 = x0 - c(PDX(z, x0, y0))/PPDX(z, x0, y0)
+        y1 = y0 - c(PDX(z, x0, y0))/PPDX(z, x0, y0)
         print (x1, y1)
         vertex[0].append(x0)
         vertex[0].append(x1)
@@ -81,9 +83,10 @@ if __name__ == '__main__':
     ax.contourf(x, y, z)
     ax.axis([-40, 40, -40, 40])
 
-    arr = newton(f, 1, 1, 0.01, ax, fig)
+    arr = newton(f, 38, 37, 0.01, ax, fig)
 
     ax.plot(arr[0], arr[1], c='red')
-
+    ax.set_ylabel('y', fontsize = 15)
+    ax.set_xlabel('x', fontsize = 15)
     pylab.ioff()
     pylab.show()
