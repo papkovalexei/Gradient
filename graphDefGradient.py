@@ -59,8 +59,8 @@ def makeData(z):
 
 
 if __name__ == '__main__':
-    z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
-    f = lambda x, y: (x**2)/15 + (y**2)/2
+    z = lambda a: (a[0]**4) + (a[1]**4)
+    f = lambda x, y: (x**4) + (y**4)
     x, y, z = makeData(z)
 
     pylab.ion()
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     ax.contourf(x, y, z)
     ax.axis([-40, 40, -40, 40])
 
-    arr = defGradient(f, -38, 20, 0.01, ax, fig)
+    arr = defGradient(f, 5, 5, 0.01, ax, fig)
 
     ax.plot(arr[0], arr[1], c='red')
     ax.set_ylabel('y', fontsize = 15)

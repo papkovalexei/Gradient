@@ -1,122 +1,82 @@
 import numpy
 import math
 
-def PDX(func, x, y):
-    d = 0.000000001
-    return (func(x + d, y) - func(x, y))/d
-def PDY(func, x, y):
-    d = 0.000000001
-    return (func(x, y + d) - func(x, y))/d
+def PD(f, args, i):
+    d = 0.000001
+    args_local = args.copy()
+    args_local[i] += d
+    return (f(args_local) - f(args))/d
 
-def myGradient(func, x, y): 
-    return (PDX(func, x, y), PDY(func, x, y))
+def myGradient(func, args): 
+    argsPD = args.copy()
 
-def goldenSlice(func, a, b, eps):
+    i = 0
+    while i < len(argsPD):
+        argsPD[i] = PD(f, argsPD, i)
+        i += 1
+    return argsPD
+
+def goldenSlice(func, argsL1, argsR1, eps):
+    iter = 0
     t1 = 0.381966
     t2 = 1 - t1
 
-    x1 = []
-    x2 = []
+    argsL = argsL1.copy()
+    argsR = argsR1.copy()
 
-    x1.append(a[0] + (b[0] - a[0]) * t1)
-    x1.append(a[1] + (b[1] - a[1]) * t1)
+    x1 = argsL + (argsR - argsL) * t1
+    x2 = argsL + (argsR - argsL) * t2
+    
+    f1 = func(x1 - eps)
+    f2 = func(x2 + eps)
 
-    x2.append(a[0] + (b[0] - a[0]) * t2)
-    x2.append(a[1] + (b[1] - a[1]) * t2)
+    i = 0
+    delta = 0
+    while i < len(argsR):
+        delta += (argsL[i] - argsR[i])**2
+        i += 1
 
-    f1 = func(x1[0] - eps, x1[1] - eps)
-    f2 = func(x2[0] + eps, x2[1] + eps)
-
-    while math.sqrt((b[0]-a[0])**2 + (b[1] - a[1])**2) > eps:
+    while delta > eps**2:
         if f1 < f2:
-            b = x2
+            argsR = x2
             x2 = x1
             f2 = f1
-            x1[0] = a[0] + (b[0] - a[0]) * t1
-            x1[1] = a[1] + (b[1] - a[1]) * t1
-            f1 = func(x1[0], x1[1])
+            x1 = argsL + (argsR - argsL) * t1
+            f1 = func(x1)
         else:
-            a = x1
+            argsL = x1
             x1 = x2
             f1 = f2
-            x2[0] = a[0] + (b[0] - a[0]) * t2
-            x2[1] = a[1] + (b[1] - a[1]) * t2
-            f2 = func(x2[0], x2[1])
-    return [(a[0] + b[0])/2, (a[1] + b[1])/2]
+            x2 = argsL + (argsR - argsL) * t2
+            f2 = func(x2)
+        i = 0
+        delta = 0
+        while i < len(argsR):
+            delta += (argsL[i] - argsR[i])**2
+            i += 1
+    return (argsL + argsR) / 2
 
-def fibonacci(func, a, b, eps):
-    def calcFibArr(n):
-        fibArr = [0, 0, 1]
-
-        if n == 1 or n == 2:
-            return  fibArr
-
-        while len(fibArr) <= n:
-            fibArr.append(fibArr[len(fibArr) - 1] + fibArr[len(fibArr) - 2])
-
-        return fibArr
-
-    n = math.ceil(math.sqrt((b[0]-a[0])**2 + (b[1] - a[1])**2) / eps)
-    fibArr = calcFibArr(n)
-
-    if n == 1:
-        return [(a[0] + b[0])/2, (a[1] + b[1])/2]
-
-    y = []
-    z = []
-
-    y.append((fibArr[n - 2] / fibArr[n]) * (b[0] - a[0]) + a[0])
-    y.append((fibArr[n - 2] / fibArr[n]) * (b[1] - a[1]) + a[1])
-
-    z.append((fibArr[n - 1] / fibArr[n]) * (b[0] - a[0]) + a[0])
-    z.append(((fibArr[n - 1] / fibArr[n]) * (b[1] - a[1]) + a[1]))
-
-    fa = func(y[0], y[1])
-    fb = func(z[0], z[1])
-
-    while math.sqrt((b[0]-a[0])**2 + (b[1] - a[1])**2) > eps:
-        if fa < fb:
-            b = z
-            z = y
-            fb = fa
-
-            y[0] = (fibArr[n - 3] / fibArr[n - 1]) * (b[0] - a[0]) + a[0]
-            y[1] = (fibArr[n - 3] / fibArr[n - 1]) * (b[1] - a[1]) + a[1]
-            fa = func(y[0], y[1])
-        else:
-            a = y
-            y = z
-            fa = fb
-            z[0] = (fibArr[n - 2] / fibArr[n - 1]) * (b[0] - a[0]) + a[0]
-            z[1] = (fibArr[n - 2] / fibArr[n - 1]) * (b[1] - a[1]) + a[1]
-            fb = func(z[0], z[1])
-    return [(a[0] + b[0])/2, (a[1] + b[1])/2]
-
-def steepestDespect(z, x, y, e):
+def steepestDespect(f, args, e):
     iter = 0
     stop = False
+    
+    args0 = args.copy()
+    args1 = args0.copy()
 
-    x0 = x
-    y0 = y
+    while not stop:
+        args1 = goldenSlice(f, args0, -myGradient(f, args0), e)
 
-    x1 = 0
-    y1 = 0
-
-    while stop == False:
-        point = fibonacci(z, [x0, y0], [-myGradient(z, x0, y0)[0], -myGradient(z, x0, y0)[1]], e)
-        iter += 1
-        x1 = point[0]
-        y1 = point[1]
-
-        if (x1 - x0)**2 + (y1 - y0)**2 < e**2 and math.fabs(z(x0, y0) - z(x1, y1)) < e:
+        i = 0
+        delta = 0
+        while i < len(args0):
+            delta += (args1[i] - args0[i])**2
+            i += 1
+            
+        if delta < e**2 and math.fabs(f(args1) - f(args0)) < e:
             stop = True
-        x0 = x1
-        y0 = y1
+        args0 = args1.copy()
+    print(args0)
+    return iter
 
-    return (x1, y1, iter)
-
-z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
-f = lambda x, y: (x**2)/15 + (y**2)/2
-
-answer = steepestDespect(f, -38, 20, 0.01)
-print("(",answer[0],",",answer[1],") f(x, y) =",f(answer[0], answer[1]),"Iterations =",answer[2])
+f = lambda a: a[0]**2 + a[1]**2 + a[2]**2
+steepestDespect(f, numpy.array([10, 10, 13]), 0.1)
