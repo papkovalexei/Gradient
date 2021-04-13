@@ -5,88 +5,54 @@ import time
 from sympy import *
 import keyboard
 from scipy.optimize import minimize_scalar
-from decimal import Decimal
+import decimal
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 
-def PDX(func, x, y):
-    d = 0.000000001
-    return (c(func(c(x) + c(d), c(y))) - c(func(c(x), c(y))))/c(d)
-def PDY(func, x, y):
-    d = 0.000000001
-    return (func(c(x), c(y) + c(d)) - func(c(x), c(y)))/c(d)
+from mathFunc import *
 
-def myGradient(func, x, y): 
-    return (PDX(func, x, y), PDY(func, x, y))
-def c(x):
-    return Decimal(str(x)) 
-def PPDX(func, x, y):
-    d = c(0.000000001)
-    return (c(func(x + d, y)) - 2*c(func(x, y)) + c(func(x - d, y)))/c((d**2))
-def PPDY(func, x, y):
-    d = c(0.000000001)
-    return (func(c(x), c(y) + c(d)) - 2*func(c(x), c(y)) + func(c(x), c(y) - c(d)))/(c(d)**2)
-
-def newton(z, x, y, e, ax, fig):
+def newton(f1, args, e):
+    f = lambda a: eval(f1)
     stop = False
-    x0 = x
-    y0 = y
+    iter = 0
 
-    x1 = 0
-    y1 = 0
+    args0 = args.copy()
+
+    while stop == False:
+        i = 0
+
+        while i < len(args):
+            args[i] = args0[i] - PD(f, args0, i)/PPD(f, args0, i)
+            i += 1
+        if deltaArgs(args0, args) < D(e**2):
+            stop = True
+
+        args0 = args.copy()
+        iter += 1
+    return iter
+
+def newton3D(f, args, e):
+    stop = False
+
+    args0 = args.copy()
 
     vertex = [[]]
     vertex.append([])
 
     while stop == False:
-        x1 = x0 - c(PDX(z, x0, y0))/PPDX(z, x0, y0)
-        y1 = y0 - c(PDX(z, x0, y0))/PPDX(z, x0, y0)
-        print (x1, y1)
-        vertex[0].append(x0)
-        vertex[0].append(x1)
+        i = 0
+        while i < len(args):
+            args[i] = args0[i] - PD(f, args0, i)/PPD(f, args0, i)
+            i += 1
 
-        vertex[1].append(y0)
-        vertex[1].append(y1)
-
-      
-        ax.scatter(x0, y0, c='red')
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-        if math.fabs((x0 - x1)**2 + (y0 - y1)**2) < e**2:
+        if deltaArgs(args0, args) < D(e**2):
             stop = True
+        vertex[0].append(float(args0[0]))
+        vertex[0].append(float(args[0]))
 
-        x0 = x1
-        y0 = y1
+        vertex[1].append(float(args0[1]))
+        vertex[1].append(float(args[1]))
 
+        args0 = args.copy()
     return vertex
-    
-
-def makeData(z):
-    x = numpy.arange(-40, 40, 0.5)
-    y = numpy.arange(-40, 40, 0.5)
-    xgrid, ygrid = numpy.meshgrid(x, y)
-
-    zgrid = z([xgrid, ygrid])
-    return xgrid, ygrid, zgrid
-
-
-if __name__ == '__main__':
-    z = lambda a: 10*a[0]**2 + a[1]**2
-    f = lambda x, y: 10*x**2+y**2
-    x, y, z = makeData(z)
-
-    pylab.ion()
-
-    fig, ax = pylab.subplots()
-
-    ax.contourf(x, y, z)
-    ax.axis([-40, 40, -40, 40])
-
-    arr = newton(f, 38, 37, 0.01, ax, fig)
-
-    ax.plot(arr[0], arr[1], c='red')
-    ax.set_ylabel('y', fontsize = 15)
-    ax.set_xlabel('x', fontsize = 15)
-    pylab.ioff()
-    pylab.show()

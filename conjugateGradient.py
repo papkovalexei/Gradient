@@ -1,77 +1,105 @@
 import numpy
 import math
 import numpy.ma as ma
+import pylab
+import time
+from random import randint
+from sympy import *
+import keyboard
+import decimal
+from scipy.optimize import minimize_scalar
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
-def PDX(func, x, y):
-    d = 0.000000001
-    return (func(x + d, y) - func(x, y))/d
-def PDY(func, x, y):
-    d = 0.000000001
-    return (func(x, y + d) - func(x, y))/d
+from mathFunc import *
 
-def myGradient(func, x, y): 
-    return (PDX(func, x, y), PDY(func, x, y))
+def goldenSlice(func, argsL1, argsR1, eps):
+    argsL = argsL1.copy()
+    argsR = argsR1.copy()
 
-def goldenSlice(func, a1, b1, eps):
-    a = 0
-    b = 1e5
-    x0 = a + 0.5 * (3 - math.sqrt(5)) * (b - a)
+    a = D(0)
+    b = D(1e5)
+    x0 = a + D(0.5) * (D(3) - D(math.sqrt(5))) * (b - a)
     x1 = b - x0 + a
 
-    while math.fabs(b - a) > eps:
-        xL = a1[0] + x0 * b1[0]
-        yL = a1[1] + x0 * b1[1]
+    while math.fabs(b - a) > D(eps):
+        Left = argsL + x0 * argsR
+        Right = argsL + x1 * argsR
 
-        xR = a1[0] + x1 * b1[0]
-        yR = a1[1] + x1 * b1[1]
-
-        if  func(xL, yL) < func(xR, yR):
+        if  func(Left) < func(Right):
             b = x1
         else:
             a = x0
         x1 = x0
         x0 = b + a - x1
-    return (a + b)/2
+    return (a + b)/D(2)
 
-def conjugateGradient(z, x, y, e):
+def conjugateGradient(f1, args, e):
+    f = lambda a: eval(f1)
     stop = False
     iter = 0
-    p = []
-    p.append(-myGradient(z, x, y)[0])
-    p.append(-myGradient(z, x, y)[1])
+    p = -myGradient(f, args)
 
     grad = p
 
-    while stop == False:
+    while not stop:
         iter += 1
 
-        alpha = goldenSlice(z, (x, y), p, e)
+        alpha = goldenSlice(f, args, p, e)
+        args = args + alpha * p
 
-        x = x + alpha * p[0]
-        y = y + alpha * p[1]
-
-        grad1 = []
-        grad1.append(-myGradient(z, x, y)[0])
-        grad1.append(-myGradient(z, x, y)[1])
+        grad1 = -myGradient(f, args)
 
         if iter % 2 == 0:
             beta = 0    
         else:
-            beta = ma.innerproduct(grad1, grad1) / ma.innerproduct(grad, grad)
+            beta = inner(grad1, grad1) / inner(grad, grad)
 
-        p[0] = grad1[0] + beta * p[0]
-        p[1] = grad1[1] + beta * p[1]
+        p = grad1 + beta * p
         
-        grad = grad1
+        grad = grad1.copy()
 
-        if ma.innerproduct(grad, grad) <= e:
+        if inner(grad, grad) <= e:
             stop = True
-    return (x, y, iter)
+    return iter
 
-if __name__ == '__main__':
-    z = lambda a: (a[0]**2)/15 + (a[1]**2)/2
-    f = lambda x, y: (x**2)/15 + (y**2)/2
+def conjugateGradient3D(f, args, e):
+    stop = False
+    iter = 0
 
-    arr = conjugateGradient(f, -38, 20, 0.0001)
+    args0 = args.copy()
+    p = -myGradient(f, args)
 
-    print(arr)
+    grad = p
+    
+    vertex = [[]]
+    vertex.append([])
+
+    while not stop:
+        iter += 1
+
+        alpha = goldenSlice(f, args, p, e)
+        args = args + alpha * p
+
+        vertex[0].append(float(args0[0]))
+        vertex[0].append(float(args[0]))
+
+        vertex[1].append(float(args0[1]))
+        vertex[1].append(float(args[1]))
+
+        args0 = args.copy()
+        grad1 = -myGradient(f, args)
+
+        if iter % 2 == 0:
+            beta = 0    
+        else:
+            beta = inner(grad1, grad1) / inner(grad, grad)
+
+        p = grad1 + beta * p
+        
+        grad = grad1.copy()
+
+        if inner(grad, grad) <= e:
+            stop = True
+    return vertex

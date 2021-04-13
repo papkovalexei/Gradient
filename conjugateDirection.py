@@ -1,64 +1,119 @@
 import numpy
 import math
+import numpy.ma as ma
+import pylab
+import time
+from random import randint
+from sympy import *
+import keyboard
+import decimal
+from scipy.optimize import minimize_scalar
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
-def PDX(func, x, y):
-    d = 0.000000001
-    return (func(x + d, y) - func(x, y))/d
-def PDY(func, x, y):
-    d = 0.000000001
-    return (func(x, y + d) - func(x, y))/d
+from mathFunc import *
 
-def myGradient(func, x, y): 
-    return (PDX(func, x, y), PDY(func, x, y))
-
-def dichotomy(func, a1, b1, eps):
-    a = -1e3
-    b = 1e3
+def findM(func, a1, b1, eps):
+    a = D(-1e3)
+    b = D(1e3)
     
-    while math.fabs(b - a > eps):
-        y1 = func(a1[0] + a * b1[0], a1[1] + a * b1[1])
-        y2 = func(a1[0] + b * b1[0], a1[1] + b * b1[1])
+    while math.fabs(b - a) > D(eps):
+        y1 = func(a1 + a * b1)
+        y2 = func(a1 + b * b1)
 
-        c = (a + b) / 2
+        c = (a + b) / D(2)
         
         if y1 < y2:
             b = c
         else:
             a = c
-    return (a + b) / 2
+    return (a + b) / D(2)
 
-def conjugateDirection(z, x, y, e):
-    s1 = [1, 0]
-    s2 = [0, 1]
+def conjugateDirection(f1, args, e):
+    f = lambda a: eval(f1)
+    s = numpy.zeros((len(args), len(args)), dtype=numpy.dtype(decimal.Decimal))
+
+    i, j = 0, 0
+
+    while j < len(args):
+        while i < len(args):
+            if i == j:
+                s[i][j] = D(1)
+            else:
+                s[i][j] = D(0)
+            i += 1
+        j += 1
+        i = 0
     iter = 0
 
-    while myGradient(z, x, y)[0]**2 + myGradient(z, x, y)[1]**2 > e**2:
+
+
+    while sqGrad(f, args) > D(e)**D(2):
         iter += 1
-        lbm = dichotomy(z, (x, y), s2, e)
-        x1 = x + lbm*s2[0]
-        y1 = y + lbm*s2[1]
 
-        lbm = dichotomy(z, (x1, y1), s1, e)
+        i = 2
+        while i < len(args):
+            lbm = findM(f, args, s[i], e)
+            args = args + lbm*s[i]
+            i += 1
 
-        x2 = x1 + lbm*s1[0]
-        y2 = y1 + lbm*s1[1]
+        lbm = findM(f, args, s[0], e)
+        args1 = args + lbm*s[0]
 
-        lbm = dichotomy(z, (x2, y2), s2, e)
+        lbm = findM(f, args1, s[1], e)
 
-        x3 = x2 + lbm*s2[0]
-        y3 = y2 + lbm*s2[1]
+        args2 = args1 + lbm*s[1]
 
-        s2[0] = x3 - x1
-        s2[1] = y3 - y1
+        lbm = findM(f, args2, s[0], e)
+        args3 = args2 + lbm*s[0]
 
-        x = x3
-        y = y3
-    return (x, y, iter)
+        s[0] = args3 - args1
+        args = args3
+    return iter
 
+def conjugateDirection3D(f, args, e):
+    s = numpy.zeros((len(args), len(args)), dtype=numpy.dtype(decimal.Decimal))
 
-if __name__ == '__main__':
-    f = lambda x, y: (x**2)/15 + (y**2)/2
+    i, j = 0, 0
 
-    arr = conjugateDirection(f, -38, 20, 0.0001)
+    while j < len(args):
+        while i < len(args):
+            if i == j:
+                s[i][j] = D(1)
+            else:
+                s[i][j] = D(0)
+            i += 1
+        j += 1
+        i = 0
+    
+    vertex = [[]]
+    vertex.append([])
 
-    print(arr)
+    while sqGrad(f, args) > D(e)**D(2):
+        i = 2
+        while i < len(args):
+            lbm = findM(f, args, s[i], e)
+            args = args + lbm*s[i]
+            i += 1
+
+        lbm = findM(f, args, s[0], e)
+        args1 = args + lbm*s[0]
+
+        lbm = findM(f, args1, s[1], e)
+
+        args2 = args1 + lbm*s[1]
+
+        lbm = findM(f, args2, s[0], e)
+        args3 = args2 + lbm*s[0]
+
+        s[0] = args3 - args1
+
+        vertex[0].append(float(args[0]))
+        vertex[0].append(float(args3[0]))
+
+        vertex[1].append(float(args[1]))
+        vertex[1].append(float(args3[1]))
+
+        args = args3
+    return vertex
